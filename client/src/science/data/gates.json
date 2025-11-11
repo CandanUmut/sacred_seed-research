@@ -1,0 +1,14 @@
+[
+  {
+    "id": "utj",
+    "capacitationRequired": 55,
+    "angleTolerance": 0.45,
+    "speedMinimum": 3.2
+  },
+  {
+    "id": "ampulla",
+    "capacitationRequired": 75,
+    "hyperactivationRequired": true,
+    "acrosomeWindow": 12
+  }
+]

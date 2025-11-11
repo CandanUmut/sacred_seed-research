@@ -1,0 +1,44 @@
+[
+  {
+    "id": "vagina",
+    "ph": 4.1,
+    "viscosity": 0.8,
+    "flow": { "x": 0.2, "y": -0.6 },
+    "capacitationRate": 0.8
+  },
+  {
+    "id": "cervix",
+    "ph": 7.0,
+    "viscosity": 0.9,
+    "flow": { "x": 0.4, "y": -0.3 },
+    "capacitationRate": 1.2
+  },
+  {
+    "id": "uterus",
+    "ph": 7.1,
+    "viscosity": 0.6,
+    "flow": { "x": 0.0, "y": -0.8 },
+    "capacitationRate": 1.6
+  },
+  {
+    "id": "utj",
+    "ph": 7.2,
+    "viscosity": 0.95,
+    "flow": { "x": 0.0, "y": -0.2 },
+    "capacitationRate": 1.8
+  },
+  {
+    "id": "isthmus",
+    "ph": 7.5,
+    "viscosity": 0.7,
+    "flow": { "x": 0.1, "y": -0.4 },
+    "capacitationRate": 2.0
+  },
+  {
+    "id": "ampulla",
+    "ph": 7.9,
+    "viscosity": 0.85,
+    "flow": { "x": 0.3, "y": -0.1 },
+    "capacitationRate": 2.2
+  }
+]

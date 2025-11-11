@@ -1,0 +1,12 @@
+[
+  {
+    "region": "isthmus",
+    "strength": 0.2,
+    "noise": 0.05
+  },
+  {
+    "region": "ampulla",
+    "strength": 0.4,
+    "noise": 0.02
+  }
+]

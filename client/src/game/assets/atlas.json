@@ -1,0 +1,6 @@
+{
+  "sprites": [
+    { "id": "player", "shape": "circle", "radius": 12, "color": "#6cd6ff" },
+    { "id": "guardian", "shape": "triangle", "size": 18, "color": "#ff7f50" }
+  ]
+}
