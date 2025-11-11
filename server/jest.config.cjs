@@ -1,20 +1,25 @@
 module.exports = {
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src/tests'],
-  moduleFileExtensions: ['ts', 'js'],
   extensionsToTreatAsEsm: ['.ts'],
+  transform: {
+    '^.+\\.(ts)$': ['ts-jest', { useESM: true, tsconfig: '<rootDir>/tsconfig.json' }],
+  },
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  testMatch: ['**/*.spec.ts'],
+  roots: ['<rootDir>/src/tests'],
   moduleNameMapper: {
     '^@sperm-odyssey/shared$': '<rootDir>/../shared/src/index.ts',
     '^@sperm-odyssey/shared/(.*)$': '<rootDir>/../shared/src/$1',
-  },
-  resolver: '<rootDir>/jest.resolver.cjs',
-  transform: {
-    '^.+\\.ts$': [
-      'ts-jest',
-      {
-        tsconfig: '<rootDir>/tsconfig.json',
-        useESM: true,
-      },
-    ],
+    '^\.\./sim/(.*)\.js$': '<rootDir>/src/sim/$1.ts',
+    '^\./Biology\.js$': '<rootDir>/src/sim/Biology.ts',
+    '^\./BiologyRules\.js$': '<rootDir>/src/sim/BiologyRules.ts',
+    '^\./World\.js$': '<rootDir>/src/sim/World.ts',
+    '^\./RNG\.js$': '<rootDir>/src/sim/RNG.ts',
+    '^\.\./shared/src/(.*)\.js$': '<rootDir>/../shared/src/$1.ts',
+    '^\.\/constants\.js$': '<rootDir>/../shared/src/constants.ts',
+    '^\.\/schema\.js$': '<rootDir>/../shared/src/schema.ts',
+    '^\.\/types\.js$': '<rootDir>/../shared/src/types.ts',
+    '^\.\/rng\.js$': '<rootDir>/../shared/src/rng.ts',
   },
 };

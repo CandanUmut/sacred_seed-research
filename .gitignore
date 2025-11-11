@@ -1,0 +1,15 @@
+node_modules
+.DS_Store
+coverage
+.dist
+build
+.tmp
+*.log
+*.tsbuildinfo
+dist
+.vite
+.env*
+.husky/_/
+pnpm-lock.yaml
+yarn.lock
+.idea

@@ -1,0 +1,27 @@
+{
+  "name": "@sperm-odyssey/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "msgpackr": "1.10.2",
+    "zod": "3.22.4"
+  },
+  "devDependencies": {
+    "tsup": "7.2.0",
+    "typescript": "5.4.3",
+    "vitest": "1.4.0"
+  }
+}

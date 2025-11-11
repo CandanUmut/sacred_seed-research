@@ -1,32 +1,17 @@
-import path from 'node:path';
 import { defineConfig } from 'vite';
-
-const sharedSrc = path.resolve(__dirname, '../shared/src');
+import path from 'node:path';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@sperm-odyssey/shared': sharedSrc,
-    },
-  },
   server: {
     port: 5173,
     strictPort: true,
-    proxy: {
-      '/socket.io': {
-        target: 'http://localhost:8787',
-        ws: true,
-      },
-    },
   },
-  build: {
-    target: 'es2022',
+  preview: {
+    port: 4173,
   },
-  test: {
-    environment: 'jsdom',
-    globals: true,
+  resolve: {
     alias: {
-      '@sperm-odyssey/shared': sharedSrc,
+      '@sperm-odyssey/shared': path.resolve(__dirname, '../shared/src/index.ts'),
     },
   },
 });
