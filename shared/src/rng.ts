@@ -6,6 +6,10 @@ export class SeededRng {
     this.state = SeededRng.hash(seed);
   }
 
+  getState(): number {
+    return this.state;
+  }
+
   static hash(seed: string): number {
     let h = 1779033703 ^ seed.length;
     for (let i = 0; i < seed.length; i += 1) {
@@ -26,6 +30,23 @@ export class SeededRng {
     return min + this.next() * (max - min);
   }
 
+  int(min: number, max: number): number {
+    return Math.floor(this.range(min, max + 1));
+  }
+
+  fork(label: string): SeededRng {
+    return new SeededRng(`${this.state}:${label}`);
+  }
+
+  gaussian(mean = 0, stdDev = 1): number {
+    let u = 0;
+    let v = 0;
+    while (u === 0) u = this.next();
+    while (v === 0) v = this.next();
+    const mag = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    return mean + stdDev * mag;
+  }
+
   pick<T>(array: readonly T[]): T {
     return array[Math.floor(this.next() * array.length) % array.length];
   }
@@ -38,4 +59,10 @@ export function shuffle<T>(array: T[], rng: SeededRng): T[] {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+export function noise2D(x: number, y: number, rng: SeededRng): number {
+  const seed = SeededRng.hash(`${x}:${y}:${rng.getState()}`);
+  const nRng = new SeededRng(String(seed));
+  return nRng.next() * 2 - 1;
 }

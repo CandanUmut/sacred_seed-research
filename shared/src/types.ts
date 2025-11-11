@@ -36,6 +36,28 @@ export interface RaceSimulationSnapshot {
   winnerId?: PlayerId;
 }
 
+export type EntityPack = [
+  id: number,
+  qx: number,
+  qy: number,
+  qvx: number,
+  qvy: number,
+  reg: number,
+  capPctQ: number,
+  flags: number,
+];
+
+export interface EntityState {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  region: number;
+  capacitation: number;
+  flags: number;
+}
+
 export interface InputFrame {
   tick: number;
   direction: Vector2;

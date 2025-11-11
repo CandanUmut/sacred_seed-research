@@ -1,54 +1,69 @@
 import { io, type Socket } from 'socket.io-client';
-import { protocolMessage, type ProtocolMessage } from '@sperm-odyssey/shared';
-import { encode, decode } from 'msgpackr';
+import {
+  decodeSnapshot,
+  type InputMsg,
+  type Snapshot,
+  type StartMsg,
+  type FinishMsg,
+} from '@sperm-odyssey/shared';
 
 export class GameSocket {
   private socket: Socket;
-  private listeners = new Set<(message: ProtocolMessage) => void>();
-  private ready = false;
+  private snapshotListeners = new Set<(snapshot: Snapshot) => void>();
+  private startListeners = new Set<(payload: StartMsg) => void>();
+  private finishListeners = new Set<(payload: FinishMsg) => void>();
 
   constructor(url = 'http://localhost:8787') {
-    this.socket = io(url, {
-      transports: ['websocket'],
+    this.socket = io(url, { transports: ['websocket'] });
+    this.socket.on('state', (payload: ArrayBuffer) => {
+      const snapshot = decodeSnapshot(new Uint8Array(payload));
+      for (const listener of this.snapshotListeners) listener(snapshot);
     });
-    this.socket.on('connect', () => {
-      this.ready = true;
-      this.send({ type: 'hello', version: 1 });
+    this.socket.on('start', (payload: StartMsg) => {
+      for (const listener of this.startListeners) listener(payload);
     });
-    this.socket.on('message', (payload: ArrayBuffer) => {
-      const message = protocolMessage.parse(decode(new Uint8Array(payload)));
-      this.listeners.forEach((listener) => listener(message));
+    this.socket.on('finish', (payload: FinishMsg) => {
+      for (const listener of this.finishListeners) listener(payload);
     });
   }
 
-  onMessage(listener: (message: ProtocolMessage) => void): void {
-    this.listeners.add(listener);
+  join(name: string, room?: string): void {
+    this.socket.emit('joinRoom', { name, room });
   }
 
-  offMessage(listener: (message: ProtocolMessage) => void): void {
-    this.listeners.delete(listener);
+  sendInputs(frames: InputMsg[]): void {
+    if (frames.length === 0) return;
+    this.socket.emit('inputs', frames);
   }
 
-  send(message: ProtocolMessage): void {
-    this.socket.emit('message', encode(message));
+  onSnapshot(listener: (snapshot: Snapshot) => void): void {
+    this.snapshotListeners.add(listener);
+  }
+
+  offSnapshot(listener: (snapshot: Snapshot) => void): void {
+    this.snapshotListeners.delete(listener);
+  }
+
+  onStart(listener: (payload: StartMsg) => void): void {
+    this.startListeners.add(listener);
+  }
+
+  offStart(listener: (payload: StartMsg) => void): void {
+    this.startListeners.delete(listener);
+  }
+
+  onFinish(listener: (payload: FinishMsg) => void): void {
+    this.finishListeners.add(listener);
+  }
+
+  offFinish(listener: (payload: FinishMsg) => void): void {
+    this.finishListeners.delete(listener);
   }
 
   close(): void {
     this.socket.disconnect();
-  }
-
-  join(displayName: string, roomId?: string, mode: 'singleplayer' | 'multiplayer' = 'multiplayer'): void {
-    if (!this.ready) {
-      this.socket.once('connect', () => this.join(displayName, roomId, mode));
-      return;
-    }
-    this.send({
-      type: 'joinRoom',
-      payload: {
-        displayName,
-        roomId,
-        mode,
-      },
-    });
+    this.snapshotListeners.clear();
+    this.startListeners.clear();
+    this.finishListeners.clear();
   }
 }
