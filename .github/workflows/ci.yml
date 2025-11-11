@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build workspaces
+        run: npm run build --workspaces
+      - name: Run unit tests
+        run: npm run test --workspaces
+      - name: Soak (5m, 60 bots)
+        run: |
+          nohup npm -w server run dev > server.log 2>&1 &
+          sleep 5
+          SERVER_URL=ws://localhost:8787 BOTS=60 DURATION=300 node tools/dev/swarm.js || true
+          curl -s http://localhost:8787/metrics | tee metrics.txt || true
+      - name: Collect report
+        run: |
+          echo "# TEST REPORT" > test-summary.md
+          echo "Unit/Integration: see job logs" >> test-summary.md
+          if [ -f metrics.txt ]; then
+            echo "\n\n\`\n$(cat metrics.txt)\n\`" >> test-summary.md
+          fi
+          if [ -f server.log ]; then
+            tail -n 200 server.log >> test-summary.md
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            test-summary.md
+            metrics.txt
+            server.log

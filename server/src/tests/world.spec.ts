@@ -1,15 +1,24 @@
 import { SimWorld } from '../sim/World.js';
+import type { InputMsg } from '@sperm-odyssey/shared';
+
+function forwardInput(tick: number): InputMsg {
+  return { t: tick, u: true, d: false, l: false, r: false, ha: tick % 30 === 0 };
+}
 
 describe('SimWorld', () => {
-  it('advances progress and records winners', () => {
-    const world = new SimWorld('test-seed');
-    world.addPlayer('p1', 'Test');
-    for (let i = 0; i < 500; i += 1) {
-      world.applyInputs('p1', [{ tick: i, direction: { x: 0, y: -1 }, hyperactivate: i % 50 === 0 }]);
-      world.step(50);
+  it('advances players with queued inputs', () => {
+    const world = new SimWorld('spec-seed');
+    world.addPlayer('session-1', 'Tester');
+    const before = world.listAgents()[0];
+
+    for (let tick = 1; tick <= 200; tick += 1) {
+      world.queueInput('session-1', forwardInput(tick));
+      world.step();
     }
-    const winners = world.getWinners();
-    expect(winners.length).toBeGreaterThanOrEqual(0);
-    expect(world.createSnapshot().players[0].progress).toBeLessThanOrEqual(1);
+
+    const after = world.listAgents()[0];
+    expect(after.timeInTract).toBeGreaterThan(before.timeInTract);
+    expect(world.getFinishedAgents().length).toBeGreaterThanOrEqual(0);
+    expect(world.getTick()).toBeGreaterThan(0);
   });
 });

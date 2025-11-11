@@ -6,6 +6,7 @@ import { SinglePlayerScene } from './game/scenes/SinglePlayerScene.js';
 import { MultiplayerRaceScene } from './game/scenes/MultiplayerRaceScene.js';
 import { PostRaceScene } from './game/scenes/PostRaceScene.js';
 import { LobbyScene } from './game/scenes/LobbyScene.js';
+import { SpectateScene } from './game/scenes/SpectateScene.js';
 import { SceneManager } from './game/scenes/SceneManager.js';
 import './styles/ui.css';
 
@@ -34,6 +35,7 @@ async function bootstrap(): Promise<void> {
   sceneManager.register('lobby', () => new LobbyScene(sceneManager));
   sceneManager.register('singleplayer', () => new SinglePlayerScene(sceneManager));
   sceneManager.register('multiplayer', () => new MultiplayerRaceScene(sceneManager));
+  sceneManager.register('spectate', () => new SpectateScene(sceneManager));
   sceneManager.register('postrace', () => new PostRaceScene(sceneManager));
 
   sceneManager.change('boot');

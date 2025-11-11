@@ -40,6 +40,26 @@ const GATE_REQUIREMENTS: GateRequirement[] = [
   { region: 'ampulla', capacitationThreshold: 0.85, speedMin: 2.5, angleWindow: Math.PI / 2 },
 ];
 
+export interface GateScience {
+  region: RegionId;
+  capacitationRequired: number;
+  speedMinimum?: number;
+  hyperactivationRequired?: boolean;
+  angleWindow?: number;
+}
+
+export function getGateScience(region: RegionId): GateScience | undefined {
+  const requirement = GATE_REQUIREMENTS.find((gate) => gate.region === region);
+  if (!requirement) return undefined;
+  return {
+    region: requirement.region,
+    capacitationRequired: requirement.capacitationThreshold,
+    speedMinimum: requirement.speedMin,
+    angleWindow: requirement.angleWindow,
+    hyperactivationRequired: requirement.region === 'ampulla',
+  };
+}
+
 const CHEMOTAXIS_TABLE: Record<RegionId, ChemotaxisParams> = {
   vagina: { falloff: 0.35, strength: 0.08, noise: 0.05 },
   cervix: { falloff: 0.35, strength: 0.08, noise: 0.05 },

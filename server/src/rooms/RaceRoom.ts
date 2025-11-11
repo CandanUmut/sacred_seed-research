@@ -13,6 +13,7 @@ import {
   type InputMsg,
   type Snapshot,
 } from '@sperm-odyssey/shared';
+import { randomUUID } from 'node:crypto';
 import { SimWorld } from '../sim/World.js';
 import { logger } from '../util/logger.js';
 import {
@@ -21,6 +22,9 @@ import {
   recordBytesOut,
   setPlayers,
 } from '../util/metrics.js';
+import { Recorder } from '../replay/Recorder.js';
+import type { SeasonService } from '../db/SeasonService.js';
+import { ReplayStore } from '../replay/Store.js';
 
 interface PlayerSession {
   socket: Socket;
@@ -40,6 +44,7 @@ interface LeaderboardEntry {
 export class RaceRoom {
   readonly id: string;
   private readonly world: SimWorld;
+  private readonly seed: string;
   private readonly players = new Map<string, PlayerSession>();
   private tickHandle?: NodeJS.Timeout;
   private snapshotHandle?: NodeJS.Timeout;
@@ -47,9 +52,28 @@ export class RaceRoom {
   private finished = false;
   private leaderboard: LeaderboardEntry[] = [];
 
-  constructor(id: string, seed: string) {
+  private readonly recorder: Recorder;
+  private readonly replayStore: ReplayStore;
+  private readonly startedAt: Date;
+  private readonly spectators = new Map<string, Socket>();
+
+  constructor(
+    id: string,
+    seed: string,
+    private readonly seasonService: SeasonService,
+    replayStore: ReplayStore,
+  ) {
     this.id = id;
+    this.seed = seed;
     this.world = new SimWorld(`${seed}:${id}`);
+    this.replayStore = replayStore;
+    this.startedAt = new Date();
+    this.recorder = new Recorder({
+      version: 1,
+      seed: hashSeed(seed),
+      worldHash: 'SimWorld:v1',
+      startedAt: Math.round(this.startedAt.getTime()),
+    });
   }
 
   start(): void {
@@ -62,6 +86,7 @@ export class RaceRoom {
     if (this.tickHandle) clearInterval(this.tickHandle);
     if (this.snapshotHandle) clearInterval(this.snapshotHandle);
     this.players.clear();
+    this.spectators.clear();
   }
 
   join(sessionId: string, name: string, socket: Socket): PlayerSession {
@@ -88,6 +113,15 @@ export class RaceRoom {
     setPlayers(this.id, this.players.size);
   }
 
+  addSpectator(sessionId: string, socket: Socket): void {
+    this.spectators.set(sessionId, socket);
+    socket.emit('spectate:start', { roomId: this.id, tick: this.serverTick });
+  }
+
+  removeSpectator(sessionId: string): void {
+    this.spectators.delete(sessionId);
+  }
+
   getPlayerCount(): number {
     return this.players.size;
   }
@@ -105,6 +139,15 @@ export class RaceRoom {
       player.lastInputTick = frame.t;
       player.lastInputAt = now;
       this.world.queueInput(sessionId, frame);
+      this.recorder.addInput({
+        t: frame.t,
+        id: player.entityId,
+        u: frame.u,
+        d: frame.d,
+        l: frame.l,
+        r: frame.r,
+        ha: frame.ha,
+      });
     }
   }
 
@@ -138,6 +181,7 @@ export class RaceRoom {
         for (const { socket } of this.players.values()) {
           socket.emit('finish', payload);
         }
+        void this.persistResults();
       }
     }
   }
@@ -174,5 +218,70 @@ export class RaceRoom {
         p.slowMode = false;
       }
     }
+    if (this.spectators.size > 0 && this.serverTick % 8 === 0) {
+      const ents = this.world.getEntities().map((e) =>
+        packEntity({
+          id: e.id,
+          x: e.x,
+          y: e.y,
+          vx: e.vx,
+          vy: e.vy,
+          region: e.region,
+          capacitation: e.capacitation,
+          flags: e.flags,
+        }),
+      );
+      const snapshot: Snapshot = { sTick: this.serverTick, you: -1, ents };
+      const buffer = encodeSnapshot(snapshot);
+      for (const socket of this.spectators.values()) {
+        socket.emit('state', buffer);
+        recordBytesOut(this.id, -1, buffer.length);
+      }
+    }
   }
+
+  private persistResults(): void {
+    const finishers = this.world.getFinishedAgents();
+    const participants = finishers.map((agent, index) => ({
+      playerId: agent.sessionId,
+      name: agent.name,
+      place: index + 1,
+      timeMs: (agent.finishTick ?? this.serverTick) * TICK_MS,
+    }));
+    const dnfs = [...this.players.entries()]
+      .filter(([sessionId]) => !finishers.some((agent) => agent.sessionId === sessionId))
+      .map(([sessionId, player], idx) => ({
+        playerId: sessionId,
+        name: player.name,
+        place: finishers.length + idx + 1,
+        timeMs: this.serverTick * TICK_MS,
+      }));
+    const results = [...participants, ...dnfs];
+    const buffer = this.recorder.toBuffer();
+    const replayId = `${this.id}:${randomUUID()}`;
+    void this.replayStore.save(replayId, buffer).catch((error) => {
+      logger.error({ err: error }, 'Failed to save replay');
+    });
+    void this.seasonService
+      .recordMatch({
+        roomId: this.id,
+        seed: this.worldSeed(),
+        startedAt: this.startedAt,
+        finishedAt: new Date(),
+        participants: results,
+      })
+      .catch((error) => logger.error({ err: error }, 'Failed to record match result'));
+  }
+
+  private worldSeed(): string {
+    return this.seed;
+  }
+}
+
+function hashSeed(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
 }

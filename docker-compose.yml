@@ -6,6 +6,9 @@ services:
       - '8787:8787'
     environment:
       - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
   client:
     image: nginx:1.25-alpine
     ports:
@@ -14,3 +17,7 @@ services:
       - ./client/dist:/usr/share/nginx/html:ro
     depends_on:
       - server
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'

@@ -25,6 +25,7 @@ export class MenuScene implements Scene {
     const options: Array<[string, () => void]> = [
       ['Start Single Player', () => this.manager.goTo('singleplayer')],
       ['Join Multiplayer Lobby', () => this.manager.goTo('lobby')],
+      ['Spectate Live Race', () => this.manager.goTo('spectate')],
       ['Open Compendium', () => this.compendium.toggle(true)],
       ['Settings', () => this.settingsPanel.toggle(true)],
     ];

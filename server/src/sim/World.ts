@@ -148,6 +148,10 @@ export class SimWorld {
     }
   }
 
+  get tickRate(): number {
+    return Math.round(1000 / TICK_MS);
+  }
+
   getTick(): number {
     return this.tick;
   }
@@ -179,6 +183,18 @@ export class SimWorld {
     };
     this.agents.set(entityId, agent);
     this.sessionToEntity.set(sessionId, entityId);
+    return agent;
+  }
+
+  spawnGhost(sessionId: string, entityId: number, name: string): AgentState {
+    const agent = this.addPlayer(sessionId, name);
+    if (agent.entityId !== entityId) {
+      this.agents.delete(agent.entityId);
+      agent.entityId = entityId;
+      this.agents.set(entityId, agent);
+      this.sessionToEntity.set(sessionId, entityId);
+      this.nextEntityId = Math.max(this.nextEntityId, entityId + 1);
+    }
     return agent;
   }
 
@@ -324,6 +340,10 @@ export class SimWorld {
 
   getEntities(): EntityState[] {
     return Array.from(this.agents.values()).map((agent) => this.asEntity(agent));
+  }
+
+  listAgents(): AgentState[] {
+    return Array.from(this.agents.values()).map((agent) => ({ ...agent }));
   }
 
   getFinishedAgents(): AgentState[] {

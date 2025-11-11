@@ -19,6 +19,10 @@ export type RegionId = (typeof REGION_IDS)[number];
 
 export const REGION_PROGRESSION: RegionId[] = [...REGION_IDS];
 
+// Approximate total path length between spawn and ampulla finish in world units.
+// Used for UI progress meters and ghost overlays; keep in sync with SimWorld.
+export const TRACK_LENGTH_METERS = 3280;
+
 export const DEFAULT_SETTINGS = {
   reducedMotion: false,
   colorblindMode: 'default' as 'default' | 'tritan' | 'deutan' | 'protan',

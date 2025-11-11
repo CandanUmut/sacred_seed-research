@@ -1,55 +1,55 @@
 import { describe, expect, it } from 'vitest';
 import {
-  helloMessage,
-  joinRoomMessage,
-  inputMessage,
-  stateMessage,
-  raceSnapshotSchema,
+  ChatMsg,
+  InputMsg,
+  JoinRoomMsg,
+  Snapshot,
+  decodeSnapshot,
+  encodeSnapshot,
+  packEntity,
+  unpackEntity,
 } from '../src/schema.js';
 import { REGION_PROGRESSION } from '../src/constants.js';
 
-const basePlayer = {
-  id: 'p1',
-  name: 'Learner',
-  region: REGION_PROGRESSION[0],
-  position: { x: 0, y: 0 },
-  velocity: { x: 0, y: 0 },
-  stamina: 50,
-  capacitation: 10,
-  hyperactive: false,
-  effects: [],
-  finished: false,
-  progress: 0,
-};
-
-describe('shared schemas', () => {
-  it('validates hello message', () => {
-    expect(() => helloMessage.parse({ type: 'hello', version: 1 })).not.toThrow();
+describe('shared schema', () => {
+  it('sanitizes join names', () => {
+    const parsed = JoinRoomMsg.parse({ room: 'amphitheatre', name: '  BadWord1 Hero  ' });
+    expect(parsed.name).toBe('*** Hero');
   });
 
-  it('rejects invalid join', () => {
-    expect(() => joinRoomMessage.parse({ type: 'joinRoom', payload: { displayName: '', mode: 'singleplayer' } })).toThrow();
+  it('validates player input payloads', () => {
+    const payload = InputMsg.parse({ t: 10, u: true, d: false, l: false, r: true, ha: false });
+    expect(payload).toMatchObject({ t: 10, r: true });
+    expect(() => InputMsg.parse({})).toThrow();
   });
 
-  it('accepts valid snapshot', () => {
-    const snapshot = raceSnapshotSchema.parse({
-      tick: 5,
-      players: [basePlayer],
-      worldSeed: 'seed',
-      region: REGION_PROGRESSION[0],
+  it('encodes and decodes snapshots deterministically', () => {
+    const snapshot = Snapshot.parse({
+      sTick: 12,
+      you: 5,
+      ents: [
+        packEntity({
+          id: 5,
+          x: 12.5,
+          y: -6.25,
+          vx: 1.2,
+          vy: -0.5,
+          region: REGION_PROGRESSION.indexOf('cervix'),
+          capacitation: 0.42,
+          flags: 3,
+        }),
+      ],
     });
-    expect(snapshot.players[0].name).toBe('Learner');
+    const buffer = encodeSnapshot(snapshot);
+    const decoded = decodeSnapshot(buffer);
+    expect(decoded.you).toBe(5);
+    expect(decoded.ents).toHaveLength(1);
+    const entity = unpackEntity(decoded.ents[0]);
+    expect(entity.capacitation).toBeCloseTo(0.42, 2);
   });
 
-  it('validates input frames', () => {
-    const parsed = inputMessage.parse({
-      type: 'inputs',
-      payload: { frames: [{ tick: 1, direction: { x: 0, y: 1 }, hyperactivate: false }] },
-    });
-    expect(parsed.payload.frames).toHaveLength(1);
-  });
-
-  it('rejects invalid state message', () => {
-    expect(() => stateMessage.parse({ type: 'state', payload: {} })).toThrow();
+  it('bounds chat messages', () => {
+    expect(() => ChatMsg.parse({ text: 'Friendly hello!' })).not.toThrow();
+    expect(() => ChatMsg.parse({ text: 'x'.repeat(500) })).toThrow();
   });
 });
