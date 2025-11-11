@@ -28,3 +28,41 @@ button {
   font-size: 18px;
   cursor: pointer;
 }
+
+.touch-controls {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.touch-joystick {
+  position: absolute;
+  bottom: 18vh;
+  left: 8vw;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(12, 38, 61, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  pointer-events: auto;
+}
+
+.touch-button {
+  position: absolute;
+  bottom: 20vh;
+  right: 8vw;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 16px;
+  pointer-events: auto;
+}
+
+.touch-performance {
+  bottom: 35vh;
+  right: 8vw;
+  width: 70px;
+  height: 70px;
+}

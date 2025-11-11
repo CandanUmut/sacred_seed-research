@@ -1,15 +1,17 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import type { Scene, SceneManager } from './SceneManager.js';
+import { SeasonBoard } from '../ui/SeasonBoard.js';
 
 export class LobbyScene implements Scene {
   container = new Container();
   private countdownText = new Text({ text: 'Preparing lobby...', style: { fill: 0xffffff, fontSize: 24 } });
   private timeRemaining = 5;
+  private seasonBoard = new SeasonBoard();
 
   constructor(private manager: SceneManager) {
     const bg = new Graphics().rect(0, 0, 20, 12).fill({ color: 0x042f4e });
     bg.scale.set(80);
-    this.container.addChild(bg, this.countdownText);
+    this.container.addChild(bg, this.countdownText, this.seasonBoard.container);
   }
 
   update(delta: number): void {
@@ -22,10 +24,12 @@ export class LobbyScene implements Scene {
 
   onResize(width: number, height: number): void {
     this.countdownText.position.set(width / 2 - 160, height / 2);
+    this.seasonBoard.onResize(width, height);
   }
 
   onEnter(): void {
     this.timeRemaining = 5;
+    void this.seasonBoard.loadCurrent();
   }
 
   onExit(): void {}

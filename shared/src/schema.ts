@@ -99,11 +99,24 @@ export function dequantizeCapacitation(qValue: number): number {
 }
 
 function sanitizeName(value: string): string {
-  return value
+  const cleaned = value
     .replace(/[^\p{L}0-9 _-]+/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 20) || 'Explorer';
+    .slice(0, 20);
+  if (!cleaned) return 'Explorer';
+  return censor(cleaned);
+}
+
+const BAD_WORDS = ['badword1', 'badword2', 'butt', 'poop'];
+
+function censor(text: string): string {
+  let safe = text;
+  for (const word of BAD_WORDS) {
+    const pattern = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    safe = safe.replace(pattern, '***');
+  }
+  return safe;
 }
 
 export function packEntity(entity: {

@@ -53,6 +53,13 @@ Sperm Odyssey is a respectful, educational, and family-friendly multiplayer raci
    docker-compose up --build
    ```
 
+## Post-MVP Features
+
+* Deterministic race replays with export/import APIs (`docs/REPLAYS.md`).
+* Seasonal leaderboards persisted in SQLite/Postgres (`docs/SEASONS.md`).
+* Optional Redis-backed scaling and matchmaking microservice (`docs/SCALING.md`).
+* Load and soak testing guidance using swarm bots (`docs/LOADTEST.md`).
+
 ## Scripts Overview
 
 * `npm run dev` – concurrently runs `client` (Vite) and `server` (ts-node-dev) in watch mode.

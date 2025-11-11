@@ -1,0 +1,28 @@
+config:
+  target: "http://localhost:8787"
+  phases:
+    - duration: 120
+      arrivalRate: 10
+  engines:
+    socketio:
+      transports: [websocket]
+scenarios:
+  - engine: socketio
+    flow:
+      - emit:
+          channel: joinRoom
+          data:
+            name: 'ArtilleryBot'
+      - think: 1
+      - loop:
+          - emit:
+              channel: inputs
+              data:
+                - t: "{{ $loopCount }}"
+                  u: true
+                  d: false
+                  l: false
+                  r: true
+                  ha: false
+          - think: 0.2
+        count: 100
