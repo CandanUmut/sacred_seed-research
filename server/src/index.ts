@@ -2,21 +2,24 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cron from 'node-cron';
-import { encodeMessage, decodeMessage } from './net/Encoding.js';
-import { validateMessage } from './net/Protocol.js';
 import { Matchmaker } from './matchmaking/Matchmaker.js';
 import { RoomManager } from './rooms/RoomManager.js';
 import { logger } from './util/logger.js';
-import { getMetrics } from './util/metrics.js';
+import { metricsRouter } from './util/metrics.js';
+import { parseInputBatch, parseJoinPayload } from './net/Protocol.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
 const app = express();
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
-app.get('/metrics', (_req, res) => res.json(getMetrics()));
+app.get('/healthz', (_req, res) => res.json({ status: 'ok' }));
+app.use(metricsRouter);
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' }, transports: ['websocket'] });
+
+if (process.env.USE_REDIS === 'true') {
+  logger.warn('Redis adapter requested but not configured; falling back to in-process rooms');
+}
 
 const roomManager = new RoomManager();
 const matchmaker = new Matchmaker(roomManager);
@@ -26,29 +29,28 @@ io.on('connection', (socket) => {
   let roomId: string | null = null;
   let playerId: string | null = null;
 
-  socket.on('message', (payload: ArrayBuffer) => {
+  socket.on('joinRoom', (raw) => {
     try {
-      const message = validateMessage(decodeMessage(payload));
-      if (message.type === 'joinRoom') {
-        const joined = matchmaker.handleJoin(socket, message);
-        if (joined) {
-          roomId = joined.roomId;
-          playerId = joined.playerId;
-        }
-        return;
-      }
-      if (roomId && playerId) {
-        const room = roomManager.getRoom(roomId);
-        if (room) {
-          room.handleMessage(playerId, message);
-        }
-      }
+      const payload = parseJoinPayload(raw);
+      const joined = matchmaker.handleJoin(socket, payload);
+      roomId = joined.roomId;
+      playerId = joined.playerId;
+      socket.emit('joined', { roomId, playerId });
     } catch (error) {
-      logger.warn({ err: error }, 'Failed to handle message');
-      socket.emit(
-        'message',
-        Buffer.from(encodeMessage({ type: 'error', payload: { code: 'protocol', message: 'Invalid message' } }))
-      );
+      logger.warn({ err: error }, 'Failed to join room');
+      socket.emit('error', { code: 'join-invalid', message: 'Unable to join room' });
+    }
+  });
+
+  socket.on('inputs', (raw) => {
+    if (!roomId || !playerId) return;
+    const room = roomManager.getRoom(roomId);
+    if (!room) return;
+    try {
+      const frames = parseInputBatch(raw);
+      room.handleInputs(playerId, frames);
+    } catch (error) {
+      logger.warn({ err: error }, 'Invalid input batch');
     }
   });
 
@@ -61,7 +63,7 @@ io.on('connection', (socket) => {
 });
 
 cron.schedule('*/5 * * * *', () => {
-  logger.info(getMetrics(), 'metrics heartbeat');
+  logger.info({ rooms: 'heartbeat' }, 'metrics heartbeat');
 });
 
 server.listen(PORT, () => {

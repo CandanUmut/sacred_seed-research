@@ -1,7 +1,7 @@
 import type { Socket } from 'socket.io';
 import { RaceRoom } from './RaceRoom.js';
 import { DEFAULT_ROOM_CONFIG } from '@sperm-odyssey/shared';
-import { setRooms, setPlayers } from '../util/metrics.js';
+import { setRoomCount } from '../util/metrics.js';
 
 export class RoomManager {
   private rooms = new Map<string, RaceRoom>();
@@ -11,15 +11,23 @@ export class RoomManager {
 
   createRoom(): RaceRoom {
     const id = `room-${++this.roomCounter}`;
-    const room = new RaceRoom(id);
+    const room = new RaceRoom(id, DEFAULT_ROOM_CONFIG.seed);
     room.start();
     this.rooms.set(id, room);
     this.updateMetrics();
     return room;
   }
 
-  joinOrCreate(socket: Socket, name: string): { room: RaceRoom; playerId: string } {
-    let room = [...this.rooms.values()].find((candidate) => candidate.getPlayerCount() < this.capacity);
+  joinOrCreate(socket: Socket, name: string, requestedRoom?: string): { room: RaceRoom; playerId: string } {
+    let room: RaceRoom | undefined;
+    if (requestedRoom) {
+      room = this.rooms.get(requestedRoom);
+    }
+    if (!room) {
+      room = [...this.rooms.values()]
+        .filter((candidate) => candidate.getPlayerCount() < this.capacity)
+        .sort((a, b) => a.getPlayerCount() - b.getPlayerCount())[0];
+    }
     if (!room) {
       room = this.createRoom();
     }
@@ -45,8 +53,6 @@ export class RoomManager {
   }
 
   private updateMetrics(): void {
-    setRooms(this.rooms.size);
-    const players = [...this.rooms.values()].reduce((total, room) => total + room.getPlayerCount(), 0);
-    setPlayers(players);
+    setRoomCount(this.rooms.size);
   }
 }

@@ -1,123 +1,151 @@
+import { Packr } from 'msgpackr';
 import { z } from 'zod';
-import { POWERUP_TYPES, REGION_IDS } from './constants.js';
+import { POS_Q, VEL_Q } from './constants.js';
+import type { EntityPack } from './types.js';
 
-export const vectorSchema = z.object({
-  x: z.number().finite(),
-  y: z.number().finite(),
+export const InputMsg = z.object({
+  t: z.number().int(),
+  u: z.boolean(),
+  d: z.boolean(),
+  l: z.boolean(),
+  r: z.boolean(),
+  ha: z.boolean(),
 });
+export type InputMsg = z.infer<typeof InputMsg>;
 
-export const effectSchema = z.object({
-  id: z.string(),
-  type: z.union([z.literal('stun'), z.literal('slow'), z.enum(POWERUP_TYPES)]),
-  expiresAt: z.number().nonnegative(),
+export const JoinRoomMsg = z.object({
+  room: z.string().min(1).max(32),
+  name: z
+    .string()
+    .min(1)
+    .max(20)
+    .transform((value) => sanitizeName(value)),
 });
+export type JoinRoomMsg = z.infer<typeof JoinRoomMsg>;
 
-export const playerStateSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1).max(24),
-  region: z.enum(REGION_IDS),
-  position: vectorSchema,
-  velocity: vectorSchema,
-  stamina: z.number().min(0).max(100),
-  capacitation: z.number().min(0).max(100),
-  hyperactive: z.boolean(),
-  effects: z.array(effectSchema),
-  finished: z.boolean(),
-  progress: z.number().min(0).max(1),
-});
-
-export const raceSnapshotSchema = z.object({
+export const StartMsg = z.object({
   tick: z.number().int().nonnegative(),
-  players: z.array(playerStateSchema),
-  worldSeed: z.string(),
-  region: z.enum(REGION_IDS),
-  countdown: z.number().optional(),
-  winnerId: z.string().optional(),
+  countdownMs: z.number().int().nonnegative(),
 });
+export type StartMsg = z.infer<typeof StartMsg>;
 
-export const helloMessage = z.object({
-  type: z.literal('hello'),
-  version: z.literal(1),
+export const FinishMsg = z.object({
+  winner: z.number().int().nonnegative(),
+  leaderboard: z.array(
+    z.object({
+      id: z.number().int().nonnegative(),
+      name: z.string(),
+      timeMs: z.number().int().nonnegative(),
+    })
+  ),
 });
+export type FinishMsg = z.infer<typeof FinishMsg>;
 
-export const joinRoomMessage = z.object({
-  type: z.literal('joinRoom'),
-  payload: z.object({
-    roomId: z.string().optional(),
-    displayName: z.string().min(1).max(24),
-    mode: z.union([z.literal('singleplayer'), z.literal('multiplayer')]),
-  }),
+export const ChatMsg = z.object({
+  text: z.string().max(160),
 });
+export type ChatMsg = z.infer<typeof ChatMsg>;
 
-export const inputMessage = z.object({
-  type: z.literal('inputs'),
-  payload: z.object({
-    frames: z
-      .array(
-        z.object({
-          tick: z.number().int().nonnegative(),
-          direction: vectorSchema,
-          hyperactivate: z.boolean(),
-        })
-      )
-      .max(20),
-  }),
+export const Snapshot = z.object({
+  sTick: z.number().int(),
+  you: z.number().int(),
+  ents: z.array(
+    z.tuple([
+      z.number().int(),
+      z.number().int(),
+      z.number().int(),
+      z.number().int(),
+      z.number().int(),
+      z.number().int(),
+      z.number().int(),
+      z.number().int(),
+    ])
+  ),
 });
+export type Snapshot = z.infer<typeof Snapshot>;
 
-export const stateMessage = z.object({
-  type: z.literal('state'),
-  payload: raceSnapshotSchema,
-});
+const snapshotPackr = new Packr({ structuredClone: true });
 
-export const startMessage = z.object({
-  type: z.literal('start'),
-  payload: z.object({
-    startTick: z.number().int().nonnegative(),
-    countdownMs: z.number().int().nonnegative(),
-  }),
-});
+export function encodeSnapshot(snapshot: Snapshot): Uint8Array {
+  return snapshotPackr.encode(snapshot);
+}
 
-export const finishMessage = z.object({
-  type: z.literal('finish'),
-  payload: z.object({
-    playerId: z.string(),
-    leaderboard: z.array(
-      z.object({
-        playerId: z.string(),
-        displayName: z.string(),
-        timeMs: z.number().int().nonnegative(),
-      })
-    ),
-  }),
-});
+export function decodeSnapshot(buffer: Uint8Array): Snapshot {
+  return Snapshot.parse(snapshotPackr.decode(buffer)) as Snapshot;
+}
 
-export const chatMessage = z.object({
-  type: z.literal('chat'),
-  payload: z.object({
-    playerId: z.string().optional(),
-    text: z.string().max(160),
-  }),
-});
+export function quantizePosition(value: number): number {
+  return Math.round(value * POS_Q);
+}
 
-export const errorMessage = z.object({
-  type: z.literal('error'),
-  payload: z.object({
-    code: z.string(),
-    message: z.string(),
-  }),
-});
+export function dequantizePosition(qValue: number): number {
+  return qValue / POS_Q;
+}
 
-export const protocolMessage = z.discriminatedUnion('type', [
-  helloMessage,
-  joinRoomMessage,
-  inputMessage,
-  stateMessage,
-  startMessage,
-  finishMessage,
-  chatMessage,
-  errorMessage,
-]);
+export function quantizeVelocity(value: number): number {
+  return Math.round(value * VEL_Q);
+}
 
-export type ProtocolMessage = z.infer<typeof protocolMessage>;
-export type RaceSnapshot = z.infer<typeof raceSnapshotSchema>;
-export type PlayerState = z.infer<typeof playerStateSchema>;
+export function dequantizeVelocity(qValue: number): number {
+  return qValue / VEL_Q;
+}
+
+export function quantizeCapacitation(value: number): number {
+  return Math.round(Math.max(0, Math.min(1, value)) * 255);
+}
+
+export function dequantizeCapacitation(qValue: number): number {
+  return Math.max(0, Math.min(1, qValue / 255));
+}
+
+function sanitizeName(value: string): string {
+  return value
+    .replace(/[^\p{L}0-9 _-]+/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 20) || 'Explorer';
+}
+
+export function packEntity(entity: {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  region: number;
+  capacitation: number;
+  flags: number;
+}): EntityPack {
+  return [
+    entity.id,
+    quantizePosition(entity.x),
+    quantizePosition(entity.y),
+    quantizeVelocity(entity.vx),
+    quantizeVelocity(entity.vy),
+    entity.region,
+    quantizeCapacitation(entity.capacitation),
+    entity.flags | 0,
+  ];
+}
+
+export function unpackEntity(pack: EntityPack): {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  region: number;
+  capacitation: number;
+  flags: number;
+} {
+  return {
+    id: pack[0],
+    x: dequantizePosition(pack[1]),
+    y: dequantizePosition(pack[2]),
+    vx: dequantizeVelocity(pack[3]),
+    vy: dequantizeVelocity(pack[4]),
+    region: pack[5],
+    capacitation: dequantizeCapacitation(pack[6]),
+    flags: pack[7],
+  };
+}
