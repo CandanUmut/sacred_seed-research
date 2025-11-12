@@ -23,6 +23,8 @@ module.exports = {
     '^\.\./\.\./src/replay/(.*)\.js$': '<rootDir>/src/replay/$1.ts',
     '^\.\./src/replay/(.*)\.js$': '<rootDir>/src/replay/$1.ts',
     '^\.\./replay/(.*)\.js$': '<rootDir>/src/replay/$1.ts',
+    '^\.\./util/(.*)\.js$': '<rootDir>/src/util/$1.ts',
+    '^\.\./src/(.*)\.js$': '<rootDir>/src/$1.ts',
     '^\.\/constants\.js$': '<rootDir>/../shared/src/constants.ts',
     '^\.\/schema\.js$': '<rootDir>/../shared/src/schema.ts',
     '^\.\/types\.js$': '<rootDir>/../shared/src/types.ts',

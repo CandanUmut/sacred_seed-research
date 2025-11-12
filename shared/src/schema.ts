@@ -14,7 +14,11 @@ export const InputMsg = z.object({
 export type InputMsg = z.infer<typeof InputMsg>;
 
 export const JoinRoomMsg = z.object({
-  room: z.string().min(1).max(32),
+  room: z
+    .string()
+    .min(1)
+    .max(32)
+    .optional(),
   name: z
     .string()
     .min(1)
@@ -22,6 +26,51 @@ export const JoinRoomMsg = z.object({
     .transform((value) => sanitizeName(value)),
 });
 export type JoinRoomMsg = z.infer<typeof JoinRoomMsg>;
+
+const roomIdSchema = z.string().min(1).max(32);
+
+const rosterPlayerSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  color: z.number().int().nonnegative(),
+});
+
+export const RosterMsg = z.object({
+  roomId: roomIdSchema,
+  host: z.string().min(1),
+  players: z.array(rosterPlayerSchema),
+});
+export type RosterMsg = z.infer<typeof RosterMsg>;
+
+export const LobbyMsg = z.object({
+  roomId: roomIdSchema,
+  isHost: z.boolean(),
+  state: z.enum(['waiting', 'countdown', 'racing']),
+  countdownMs: z.number().int().nonnegative().optional(),
+});
+export type LobbyMsg = z.infer<typeof LobbyMsg>;
+
+export const CountdownMsg = z.object({
+  roomId: roomIdSchema,
+  fromMs: z.number().int().nonnegative(),
+});
+export type CountdownMsg = z.infer<typeof CountdownMsg>;
+
+export const StartRaceMsg = z.object({
+  room: roomIdSchema,
+});
+export type StartRaceMsg = z.infer<typeof StartRaceMsg>;
+
+export const LeaveRoomMsg = z.object({
+  room: roomIdSchema,
+});
+export type LeaveRoomMsg = z.infer<typeof LeaveRoomMsg>;
+
+export const SetReadyMsg = z.object({
+  room: roomIdSchema,
+  ready: z.boolean(),
+});
+export type SetReadyMsg = z.infer<typeof SetReadyMsg>;
 
 export const StartMsg = z.object({
   tick: z.number().int().nonnegative(),

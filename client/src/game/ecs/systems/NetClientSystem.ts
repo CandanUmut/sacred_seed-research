@@ -5,10 +5,7 @@ import { Transform } from '../components/Transform.js';
 import { State } from '../components/State.js';
 import { Velocity } from '../components/Velocity.js';
 import { Region } from '../components/Region.js';
-import { REGION_IDS, unpackEntity, type Snapshot } from '@sperm-odyssey/shared';
-
-const FINISHED_FLAG = 1 << 0;
-const HYPERACTIVE_FLAG = 1 << 1;
+import { PLAYER_FLAG, REGION_IDS, unpackEntity, type Snapshot } from '@sperm-odyssey/shared';
 
 export interface SnapshotBuffer {
   latest?: Snapshot;
@@ -35,8 +32,8 @@ export function createNetClientSystem(buffer: SnapshotBuffer) {
       State.progress[eid] = Math.max(0, Math.min(1, regionProgress));
       Player.id[eid] = playerEntity.id;
       Player.capacitation[eid] = Math.max(0, Math.min(100, playerEntity.capacitation * 100));
-      Player.hyperactive[eid] = playerEntity.flags & HYPERACTIVE_FLAG ? 1 : 0;
-      Player.finished[eid] = playerEntity.flags & FINISHED_FLAG ? 1 : 0;
+      Player.hyperactive[eid] = playerEntity.flags & PLAYER_FLAG.DASHING ? 1 : 0;
+      Player.finished[eid] = playerEntity.flags & PLAYER_FLAG.FINISHED ? 1 : 0;
       Region.id[eid] = playerEntity.region;
     }
     return world;

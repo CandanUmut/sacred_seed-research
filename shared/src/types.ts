@@ -1,4 +1,4 @@
-import type { RegionId, PowerupType } from './constants.js';
+import type { RegionId, PowerupId } from './constants.js';
 
 export type PlayerId = string;
 
@@ -23,7 +23,7 @@ export interface PlayerRuntimeState {
 
 export interface EffectState {
   id: string;
-  type: 'stun' | 'slow' | PowerupType;
+  type: 'stun' | 'slow' | PowerupId;
   expiresAt: number;
 }
 

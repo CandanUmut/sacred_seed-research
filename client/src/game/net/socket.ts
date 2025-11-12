@@ -1,10 +1,13 @@
 import { io, type Socket } from 'socket.io-client';
 import {
   decodeSnapshot,
+  type CountdownMsg,
+  type FinishMsg,
   type InputMsg,
+  type LobbyMsg,
+  type RosterMsg,
   type Snapshot,
   type StartMsg,
-  type FinishMsg,
 } from '@sperm-odyssey/shared';
 
 export class GameSocket {
@@ -14,6 +17,9 @@ export class GameSocket {
   private finishListeners = new Set<(payload: FinishMsg) => void>();
   private joinListeners = new Set<(payload: { roomId: string; playerId: string }) => void>();
   private messageListeners = new Set<(message: { type: 'state' | 'finish'; payload: unknown }) => void>();
+  private rosterListeners = new Set<(payload: RosterMsg) => void>();
+  private lobbyListeners = new Set<(payload: LobbyMsg) => void>();
+  private countdownListeners = new Set<(payload: CountdownMsg) => void>();
 
   constructor(url = 'http://localhost:8787') {
     this.socket = io(url, { transports: ['websocket'] });
@@ -32,6 +38,15 @@ export class GameSocket {
     this.socket.on('joined', (payload: { roomId: string; playerId: string }) => {
       for (const listener of this.joinListeners) listener(payload);
     });
+    this.socket.on('roster', (payload: RosterMsg) => {
+      for (const listener of this.rosterListeners) listener(payload);
+    });
+    this.socket.on('lobby', (payload: LobbyMsg) => {
+      for (const listener of this.lobbyListeners) listener(payload);
+    });
+    this.socket.on('countdown', (payload: CountdownMsg) => {
+      for (const listener of this.countdownListeners) listener(payload);
+    });
   }
 
   join(name: string, room?: string): void {
@@ -40,6 +55,14 @@ export class GameSocket {
 
   spectate(room: string): void {
     this.socket.emit('spectate', { room });
+  }
+
+  startRace(room: string): void {
+    this.socket.emit('startRace', { room });
+  }
+
+  leaveRoom(): void {
+    this.socket.emit('leaveRoom');
   }
 
   sendInputs(frames: InputMsg[]): void {
@@ -87,6 +110,30 @@ export class GameSocket {
     this.messageListeners.delete(listener);
   }
 
+  onRoster(listener: (payload: RosterMsg) => void): void {
+    this.rosterListeners.add(listener);
+  }
+
+  offRoster(listener: (payload: RosterMsg) => void): void {
+    this.rosterListeners.delete(listener);
+  }
+
+  onLobby(listener: (payload: LobbyMsg) => void): void {
+    this.lobbyListeners.add(listener);
+  }
+
+  offLobby(listener: (payload: LobbyMsg) => void): void {
+    this.lobbyListeners.delete(listener);
+  }
+
+  onCountdown(listener: (payload: CountdownMsg) => void): void {
+    this.countdownListeners.add(listener);
+  }
+
+  offCountdown(listener: (payload: CountdownMsg) => void): void {
+    this.countdownListeners.delete(listener);
+  }
+
   close(): void {
     this.socket.disconnect();
     this.snapshotListeners.clear();
@@ -94,5 +141,8 @@ export class GameSocket {
     this.finishListeners.clear();
     this.joinListeners.clear();
     this.messageListeners.clear();
+    this.rosterListeners.clear();
+    this.lobbyListeners.clear();
+    this.countdownListeners.clear();
   }
 }
