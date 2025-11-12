@@ -30,13 +30,17 @@ export const DEFAULT_SETTINGS = {
   narration: false,
 };
 
-export const POWERUP_TYPES = [
-  'alkaline-buffer',
-  'motility-boost',
-  'navigation-ping',
-  'mucus-slip',
-] as const;
-export type PowerupType = (typeof POWERUP_TYPES)[number];
+export const POWERUP_IDS = ['chem-burst', 'mucus-net'] as const;
+export type PowerupId = (typeof POWERUP_IDS)[number];
+
+export const HAZARD_IDS = ['mucus-filament', 'vortex', 'constriction'] as const;
+export type HazardId = (typeof HAZARD_IDS)[number];
+
+export const PLAYER_FLAG = {
+  FINISHED: 1 << 0,
+  DASHING: 1 << 1,
+  STUNNED: 1 << 2,
+} as const;
 
 export const MAX_INPUT_BUFFER = 12;
 export const MAX_STAMINA = 100;

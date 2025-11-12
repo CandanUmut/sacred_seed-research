@@ -23,22 +23,22 @@ function createSqliteClient(url?: string | null): SqlClient {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new Database(file);
   const client: SqlClient = {
-    async exec(sql, params) {
+    async exec(sql: string, params?: unknown[]) {
       if (params?.length) {
         db.prepare(sql).run(...params);
       } else {
         db.exec(sql);
       }
     },
-    async get<T>(sql, params) {
+    async get<T>(sql: string, params?: unknown[]) {
       const row = params?.length ? db.prepare(sql).get(...params) : db.prepare(sql).get();
       return (row ?? undefined) as T | undefined;
     },
-    async all<T>(sql, params) {
+    async all<T>(sql: string, params?: unknown[]) {
       const rows = params?.length ? db.prepare(sql).all(...params) : db.prepare(sql).all();
       return rows as T[];
     },
-    async transaction(fn) {
+    async transaction<T>(fn: (client: SqlClient) => Promise<T>) {
       db.exec('BEGIN');
       try {
         const result = await fn(client);
@@ -64,21 +64,21 @@ function createPgClient(url: string): SqlClient {
     }
   };
   const wrap = (client: PoolClient): SqlClient => ({
-    async exec(sql, params) {
+    async exec(sql: string, params?: unknown[]) {
       const { text, values } = toPg(sql, params);
       await client.query(text, values);
     },
-    async get<T>(sql, params) {
+    async get<T>(sql: string, params?: unknown[]) {
       const { text, values } = toPg(sql, params);
       const { rows } = await client.query(text, values);
       return (rows[0] ?? undefined) as T | undefined;
     },
-    async all<T>(sql, params) {
+    async all<T>(sql: string, params?: unknown[]) {
       const { text, values } = toPg(sql, params);
       const { rows } = await client.query(text, values);
       return rows as T[];
     },
-    async transaction(fn) {
+    async transaction<T>(fn: (client: SqlClient) => Promise<T>) {
       await client.query('BEGIN');
       try {
         const result = await fn(wrap(client));
@@ -91,27 +91,27 @@ function createPgClient(url: string): SqlClient {
     },
   });
   return {
-    async exec(sql, params) {
+    async exec(sql: string, params?: unknown[]) {
       await run((client) => {
         const { text, values } = toPg(sql, params);
         return client.query(text, values);
       });
     },
-    async get<T>(sql, params) {
+    async get<T>(sql: string, params?: unknown[]) {
       const { rows } = await run((client) => {
         const { text, values } = toPg(sql, params);
         return client.query(text, values);
       });
       return (rows[0] ?? undefined) as T | undefined;
     },
-    async all<T>(sql, params) {
+    async all<T>(sql: string, params?: unknown[]) {
       const { rows } = await run((client) => {
         const { text, values } = toPg(sql, params);
         return client.query(text, values);
       });
       return rows as T[];
     },
-    async transaction(fn) {
+    async transaction<T>(fn: (client: SqlClient) => Promise<T>) {
       return run(async (client) => {
         const wrapped = wrap(client);
         return wrapped.transaction(fn);

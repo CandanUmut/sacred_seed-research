@@ -1,6 +1,7 @@
 import {
   INTEREST_NEAREST,
   PLAYER_BASE_SPEED,
+  PLAYER_FLAG,
   PLAYER_MAX_SPEED,
   REGION_IDS,
   REGION_PROGRESSION,
@@ -365,8 +366,8 @@ export class SimWorld {
 
   private computeFlags(agent: AgentState): number {
     let flags = 0;
-    if (agent.finished) flags |= 1 << 0;
-    if (agent.hyperTimer > 0) flags |= 1 << 1;
+    if (agent.finished) flags |= PLAYER_FLAG.FINISHED;
+    if (agent.hyperTimer > 0) flags |= PLAYER_FLAG.DASHING;
     return flags;
   }
 

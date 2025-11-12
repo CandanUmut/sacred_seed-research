@@ -18,7 +18,6 @@ export class RoomManager {
   createRoom(): RaceRoom {
     const id = `room-${++this.roomCounter}`;
     const room = new RaceRoom(id, DEFAULT_ROOM_CONFIG.seed, this.seasonService, this.replayStore);
-    room.start();
     this.rooms.set(id, room);
     this.updateMetrics();
     return room;
@@ -54,6 +53,15 @@ export class RoomManager {
       this.rooms.delete(roomId);
     }
     this.updateMetrics();
+  }
+
+  getRoster(roomId: string): ReturnType<RaceRoom['getRoster']> | undefined {
+    return this.rooms.get(roomId)?.getRoster();
+  }
+
+  broadcastRoster(roomId: string): void {
+    const room = this.rooms.get(roomId);
+    room?.broadcastRoster();
   }
 
   private updateMetrics(): void {

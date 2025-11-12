@@ -7,7 +7,7 @@ import { Matchmaker } from './matchmaking/Matchmaker.js';
 import { RoomManager } from './rooms/RoomManager.js';
 import { logger } from './util/logger.js';
 import { metricsRouter } from './util/metrics.js';
-import { parseInputBatch, parseJoinPayload, parseSpectatePayload } from './net/Protocol.js';
+import { parseInputBatch, parseJoinPayload, parseSpectatePayload, parseStartPayload } from './net/Protocol.js';
 import { applyRedisAdapter } from './net/RedisAdapter.js';
 import { ReplayStore } from './replay/Store.js';
 import { SeasonService } from './db/SeasonService.js';
@@ -46,7 +46,8 @@ async function main() {
       const body = req.body as Buffer;
       const parsed = ReplayBlob.parse(unpack(body));
       const id = `${Date.now()}:${randomUUID()}`;
-      await replayStore.save(id, body);
+      const payload = new Uint8Array(body.buffer, body.byteOffset, body.byteLength);
+      await replayStore.save(id, payload);
       res.status(201).json({ id, header: parsed.header });
     } catch (error) {
       logger.warn({ err: error }, 'Failed to import replay');
@@ -81,57 +82,86 @@ async function main() {
     let playerId: string | null = null;
     let spectatorRoom: string | null = null;
 
-  socket.on('joinRoom', (raw) => {
-    try {
-      const payload = parseJoinPayload(raw);
-      const joined = matchmaker.handleJoin(socket, payload);
-      roomId = joined.roomId;
-      playerId = joined.playerId;
+    socket.on('joinRoom', (raw) => {
+      try {
+        const payload = parseJoinPayload(raw);
+        const joined = matchmaker.handleJoin(socket, payload);
+        roomId = joined.roomId;
+        playerId = joined.playerId;
+        if (spectatorRoom) {
+          roomManager.removeSpectator(spectatorRoom, socket.id);
+          spectatorRoom = null;
+        }
+        socket.emit('joined', { roomId, playerId });
+
+        const room = roomManager.getRoom(roomId)!;
+        const isHost = room.isHost(playerId);
+        socket.emit('lobby', {
+          roomId,
+          isHost,
+          state: room.getPhase(),
+          countdownMs: room.getCountdownMs() ?? undefined,
+        });
+        socket.emit('roster', room.getRoster());
+      } catch (err) {
+        logger.warn({ err }, 'Failed to join room');
+        socket.emit('error', { code: 'join-invalid', message: 'Unable to join room' });
+      }
+    });
+
+    socket.on('startRace', (raw) => {
+      try {
+        if (!roomId || !playerId) return;
+        const payload = parseStartPayload(raw);
+        const room = roomManager.getRoom(payload.room);
+        if (!room) return;
+        room.requestStart(playerId);
+      } catch (err) {
+        logger.warn({ err }, 'Failed to start race');
+      }
+    });
+
+    socket.on('leaveRoom', () => {
+      if (!roomId || !playerId) return;
+      roomManager.removePlayer(roomId, playerId);
+      roomId = null;
+      playerId = null;
+    });
+
+    socket.on('inputs', (raw) => {
+      if (!roomId || !playerId) return;
+      const room = roomManager.getRoom(roomId);
+      if (!room || room.getPhase() !== 'racing') return;
+      try {
+        const frames = parseInputBatch(raw);
+        room.handleInputs(playerId, frames);
+      } catch (err) {
+        logger.warn({ err }, 'Invalid input batch');
+      }
+    });
+
+    socket.on('spectate', (raw) => {
+      try {
+        const payload = parseSpectatePayload(raw);
+        spectatorRoom = payload.room;
+        roomManager.addSpectator(payload.room, socket);
+        socket.emit('spectating', { roomId: payload.room });
+      } catch (err) {
+        logger.warn({ err }, 'Failed to spectate room');
+        socket.emit('error', { code: 'spectate-invalid', message: 'Unable to spectate room' });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      if (roomId && playerId) {
+        roomManager.removePlayer(roomId, playerId);
+      }
       if (spectatorRoom) {
         roomManager.removeSpectator(spectatorRoom, socket.id);
-        spectatorRoom = null;
       }
-      socket.emit('joined', { roomId, playerId });
-    } catch (error) {
-      logger.warn({ err: error }, 'Failed to join room');
-      socket.emit('error', { code: 'join-invalid', message: 'Unable to join room' });
-    }
+      logger.info({ socket: socket.id }, 'Client disconnected');
+    });
   });
-
-  socket.on('inputs', (raw) => {
-    if (!roomId || !playerId) return;
-    const room = roomManager.getRoom(roomId);
-    if (!room) return;
-    try {
-      const frames = parseInputBatch(raw);
-      room.handleInputs(playerId, frames);
-    } catch (error) {
-      logger.warn({ err: error }, 'Invalid input batch');
-    }
-  });
-
-  socket.on('spectate', (raw) => {
-    try {
-      const payload = parseSpectatePayload(raw);
-      spectatorRoom = payload.room;
-      roomManager.addSpectator(payload.room, socket);
-      socket.emit('spectating', { roomId: payload.room });
-    } catch (error) {
-      logger.warn({ err: error }, 'Failed to spectate room');
-      socket.emit('error', { code: 'spectate-invalid', message: 'Unable to spectate room' });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    if (roomId && playerId) {
-      roomManager.removePlayer(roomId, playerId);
-    }
-    if (spectatorRoom) {
-      roomManager.removeSpectator(spectatorRoom, socket.id);
-    }
-    logger.info({ socket: socket.id }, 'Client disconnected');
-  });
-});
 
   cron.schedule('*/5 * * * *', () => {
     logger.info({ rooms: 'heartbeat' }, 'metrics heartbeat');

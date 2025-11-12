@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { InputMsg, JoinRoomMsg } from '@sperm-odyssey/shared';
+import { InputMsg, JoinRoomMsg, StartRaceMsg } from '@sperm-odyssey/shared';
 
 const InputBatch = z.array(InputMsg).max(32);
 const SpectateMsg = z.object({ room: z.string().min(1) });
@@ -15,3 +15,8 @@ export function parseInputBatch(payload: unknown): z.infer<typeof InputBatch> {
 export function parseSpectatePayload(payload: unknown): z.infer<typeof SpectateMsg> {
   return SpectateMsg.parse(payload);
 }
+
+export function parseStartPayload(payload: unknown): StartRaceMsg {
+  return StartRaceMsg.parse(payload);
+}
+
