@@ -22,7 +22,7 @@ function createSqliteClient(url?: string | null): SqlClient {
   const file = url?.replace('sqlite://', '') ?? path.resolve(process.cwd(), 'var/data/dev.sqlite');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new Database(file);
-  return {
+  const client: SqlClient = {
     async exec(sql, params) {
       if (params?.length) {
         db.prepare(sql).run(...params);
@@ -30,16 +30,18 @@ function createSqliteClient(url?: string | null): SqlClient {
         db.exec(sql);
       }
     },
-    async get(sql, params) {
-      return params?.length ? db.prepare(sql).get(...params) : db.prepare(sql).get();
+    async get<T>(sql, params) {
+      const row = params?.length ? db.prepare(sql).get(...params) : db.prepare(sql).get();
+      return (row ?? undefined) as T | undefined;
     },
-    async all(sql, params) {
-      return params?.length ? db.prepare(sql).all(...params) : db.prepare(sql).all();
+    async all<T>(sql, params) {
+      const rows = params?.length ? db.prepare(sql).all(...params) : db.prepare(sql).all();
+      return rows as T[];
     },
     async transaction(fn) {
       db.exec('BEGIN');
       try {
-        const result = await fn(this);
+        const result = await fn(client);
         db.exec('COMMIT');
         return result;
       } catch (error) {
@@ -48,6 +50,7 @@ function createSqliteClient(url?: string | null): SqlClient {
       }
     },
   };
+  return client;
 }
 
 function createPgClient(url: string): SqlClient {
@@ -65,15 +68,15 @@ function createPgClient(url: string): SqlClient {
       const { text, values } = toPg(sql, params);
       await client.query(text, values);
     },
-    async get(sql, params) {
+    async get<T>(sql, params) {
       const { text, values } = toPg(sql, params);
       const { rows } = await client.query(text, values);
-      return rows[0];
+      return (rows[0] ?? undefined) as T | undefined;
     },
-    async all(sql, params) {
+    async all<T>(sql, params) {
       const { text, values } = toPg(sql, params);
       const { rows } = await client.query(text, values);
-      return rows;
+      return rows as T[];
     },
     async transaction(fn) {
       await client.query('BEGIN');
@@ -94,19 +97,19 @@ function createPgClient(url: string): SqlClient {
         return client.query(text, values);
       });
     },
-    async get(sql, params) {
+    async get<T>(sql, params) {
       const { rows } = await run((client) => {
         const { text, values } = toPg(sql, params);
         return client.query(text, values);
       });
-      return rows[0];
+      return (rows[0] ?? undefined) as T | undefined;
     },
-    async all(sql, params) {
+    async all<T>(sql, params) {
       const { rows } = await run((client) => {
         const { text, values } = toPg(sql, params);
         return client.query(text, values);
       });
-      return rows;
+      return rows as T[];
     },
     async transaction(fn) {
       return run(async (client) => {

@@ -15,7 +15,7 @@ export class SpectateScene implements Scene {
   private buffer: SnapshotBuffer = {};
   private status = new Text('Searching rooms...', { fill: 0xffffff, fontSize: 20 });
   private readonly snapshotListener = (snapshot: Snapshot) => {
-    this.buffer.latest = snapshot as never;
+    this.buffer.latest = snapshot;
   };
 
   constructor(private manager: SceneManager) {

@@ -1,29 +1,28 @@
 import { describe, it, expect, vi } from 'vitest';
 import { GhostLayer } from '../src/game/replay/Ghost.js';
+import type { Graphics } from 'pixi.js';
 import type { ReplaySamples } from '@sperm-odyssey/shared';
 
 describe('GhostLayer', () => {
   it('renders ghost tracks for replay samples', () => {
     const container = {
       children: [] as unknown[],
-      addChild: vi.fn(function addChild(child: unknown) {
-        container.children.push(child);
+      addChild: vi.fn((...children: Graphics[]) => {
+        container.children.push(...children);
       }),
-      removeChild: vi.fn(function removeChild(child: unknown) {
+      removeChild: vi.fn((child: Graphics) => {
         const index = container.children.indexOf(child);
         if (index >= 0) container.children.splice(index, 1);
       }),
     };
     const graphicsFactory = vi.fn(() => {
-      const graphic: any = {
-        alpha: 0,
-        lineStyle: vi.fn(() => graphic),
-        moveTo: vi.fn(() => graphic),
-        lineTo: vi.fn(() => graphic),
-        endFill: vi.fn(() => graphic),
-        destroy: vi.fn(),
-      };
-      return graphic;
+      const graphic: any = { alpha: 0 };
+      graphic.lineStyle = vi.fn(() => graphic);
+      graphic.moveTo = vi.fn(() => graphic);
+      graphic.lineTo = vi.fn(() => graphic);
+      graphic.endFill = vi.fn(() => graphic);
+      graphic.destroy = vi.fn();
+      return graphic as Graphics;
     });
     const layer = new GhostLayer(container, graphicsFactory);
     const samples: ReplaySamples = {

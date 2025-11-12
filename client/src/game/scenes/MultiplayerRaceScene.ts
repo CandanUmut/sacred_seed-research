@@ -16,6 +16,7 @@ import {
   ReplaySamples as ReplaySamplesSchema,
   type InputMsg,
   type FinishMsg,
+  type Snapshot,
   type ReplaySamples,
 } from '@sperm-odyssey/shared';
 import { TouchControls } from '../input/Touch.js';
@@ -36,7 +37,7 @@ export class MultiplayerRaceScene implements Scene {
   private localTick = 0;
   private touch?: TouchControls;
   private readonly keys = new Set<string>();
-  private readonly ghostContainer = new Container();
+  private readonly ghostContainer = new Container<Graphics>();
   private readonly ghostLayer = new GhostLayer(this.ghostContainer);
   private currentRoomId?: string;
 
@@ -57,10 +58,12 @@ export class MultiplayerRaceScene implements Scene {
 
   private handleMessage = (message: { type: 'state' | 'finish'; payload: unknown }) => {
     if (message.type === 'state') {
-      this.buffer.latest = message.payload as never;
+      this.buffer.latest = message.payload as Snapshot;
     } else if (message.type === 'finish') {
       const payload = message.payload as FinishMsg;
-      this.status.text = `Winner: ${payload.playerId}`;
+      const winner = payload.leaderboard.find((entry) => entry.id === payload.winner);
+      const winnerName = winner?.name ?? `Player ${payload.winner}`;
+      this.status.text = `Winner: ${winnerName}`;
       this.manager.goTo('postrace');
     }
   };
