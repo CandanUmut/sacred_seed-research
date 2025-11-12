@@ -17,7 +17,7 @@ interface SeasonSummary {
 export class SeasonBoard {
   readonly container = new Container();
   private readonly background = new Graphics();
-  private readonly title = new Text({ text: 'Season Ladder', style: { fill: 0xffffff, fontSize: 22 } });
+  private readonly title = new Text('Season Ladder', { fill: 0xffffff, fontSize: 22 });
   private readonly entries: Text[] = [];
   private season?: SeasonSummary;
 
@@ -40,8 +40,12 @@ export class SeasonBoard {
 
   onResize(width: number, height: number): void {
     this.background.clear();
-    this.background.rect(width - 260, 20, 240, height - 40).fill({ color: 0x0a0a1a, alpha: 0.6 });
-    this.background.rect(width - 260, 20, 240, height - 40).stroke({ color: 0xffffff, width: 1, alpha: 0.2 });
+    this.background.beginFill(0x0a0a1a, 0.6);
+    this.background.drawRect(width - 260, 20, 240, height - 40);
+    this.background.endFill();
+    this.background.lineStyle(1, 0xffffff, 0.2);
+    this.background.drawRect(width - 260, 20, 240, height - 40);
+    this.background.lineStyle(0);
     this.title.position.set(width - 240, 32);
     this.layoutEntries(width);
   }
@@ -53,10 +57,10 @@ export class SeasonBoard {
     this.entries.length = 0;
     const localName = localStorage.getItem('sperm-odyssey-name');
     rows.slice(0, 20).forEach((row, index) => {
-      const label = new Text({
-        text: `${index + 1}. ${row.name} — ${Math.round(row.rating)} pts${row.bestTimeMs ? ` • ${(row.bestTimeMs / 1000).toFixed(2)}s` : ''}`,
-        style: { fill: row.name === localName ? 0xffd166 : 0xffffff, fontSize: 16 },
-      });
+      const label = new Text(
+        `${index + 1}. ${row.name} — ${Math.round(row.rating)} pts${row.bestTimeMs ? ` • ${(row.bestTimeMs / 1000).toFixed(2)}s` : ''}`,
+        { fill: row.name === localName ? 0xffd166 : 0xffffff, fontSize: 16 },
+      );
       this.entries.push(label);
       this.container.addChild(label);
     });

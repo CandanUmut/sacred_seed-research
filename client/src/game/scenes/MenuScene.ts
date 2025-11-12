@@ -10,13 +10,18 @@ export class MenuScene implements Scene {
   private settingsPanel: SettingsPanel;
 
   constructor(private manager: SceneManager) {
-    const bg = new Graphics().rect(0, 0, 20, 20).fill({ color: 0x06223b });
+    const bg = new Graphics();
+    bg.beginFill(0x06223b);
+    bg.drawRect(0, 0, 1, 1);
+    bg.endFill();
     bg.scale.set(200);
     this.container.addChild(bg);
 
-    const title = new Text({
-      text: 'Sperm Odyssey',
-      style: { fill: 0xffffff, fontSize: 48, align: 'center', fontWeight: 'bold' },
+    const title = new Text('Sperm Odyssey', {
+      fill: 0xffffff,
+      fontSize: 48,
+      align: 'center',
+      fontWeight: 'bold',
     });
     title.anchor.set(0.5);
     title.position.set(400, 120);
@@ -31,10 +36,7 @@ export class MenuScene implements Scene {
     ];
 
     options.forEach(([label, action], idx) => {
-      const text = new Text({
-        text: label,
-        style: { fill: 0xd4f0ff, fontSize: 28, align: 'center' },
-      });
+      const text = new Text(label, { fill: 0xd4f0ff, fontSize: 28, align: 'center' });
       text.anchor.set(0.5);
       text.position.set(400, 220 + idx * 60);
       text.eventMode = 'static';

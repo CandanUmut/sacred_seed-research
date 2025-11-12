@@ -1,10 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import pg from 'pg';
-
-const { Pool } = pg;
-type PoolClient = pg.PoolClient;
+import { Pool, type PoolClient } from 'pg';
 
 export interface SqlClient {
   exec(sql: string, params?: unknown[]): Promise<void>;

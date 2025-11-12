@@ -1,4 +1,5 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Transform } from '../components/Transform.js';
 import { Velocity } from '../components/Velocity.js';
 import { Effects } from '../components/Effects.js';
@@ -6,7 +7,7 @@ import { PLAYER_MAX_SPEED } from '@sperm-odyssey/shared';
 
 export function createMovementSystem() {
   const query = defineQuery([Transform, Velocity, Effects]);
-  return (world: typeof Transform.world, delta: number) => {
+  return (world: IWorld, delta: number) => {
     const dt = delta / 60;
     for (const eid of query(world)) {
       let vx = Velocity.x[eid];

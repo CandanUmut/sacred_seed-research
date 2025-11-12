@@ -1,4 +1,5 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Transform } from '../components/Transform.js';
 import { Velocity } from '../components/Velocity.js';
 import { Region } from '../components/Region.js';
@@ -8,7 +9,7 @@ import { FLOW_FIELD_SCALE, REGION_IDS } from '@sperm-odyssey/shared';
 
 export function createFlowFieldSystem() {
   const query = defineQuery([Transform, Velocity, Region, State]);
-  return (world: typeof Transform.world, delta: number) => {
+  return (world: IWorld, delta: number) => {
     const dt = delta / 60;
     for (const eid of query(world)) {
       const regionIndex = Region.id[eid] ?? 0;

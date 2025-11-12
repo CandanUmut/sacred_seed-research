@@ -8,7 +8,7 @@ type Mode = (typeof COLORBLIND_MODES)[number];
 export class SettingsPanel {
   container = new Container();
   private panel = new Graphics();
-  private title = new Text({ text: 'Settings', style: { fill: 0xffffff, fontSize: 26, fontWeight: 'bold' } });
+  private title = new Text('Settings', { fill: 0xffffff, fontSize: 26, fontWeight: 'bold' });
   private options: Text[] = [];
 
   constructor(private manager: SceneManager) {
@@ -27,7 +27,7 @@ export class SettingsPanel {
     ];
     this.options.forEach((text) => text.destroy());
     this.options = labels.map((label, index) => {
-      const text = new Text({ text: label, style: { fill: 0xe6f7ff, fontSize: 18 } });
+      const text = new Text(label, { fill: 0xe6f7ff, fontSize: 18 });
       text.position.set(0, 40 + index * 36);
       text.eventMode = 'static';
       text.cursor = 'pointer';
@@ -67,8 +67,12 @@ export class SettingsPanel {
 
   onResize(width: number, height: number): void {
     this.panel.clear();
-    this.panel.roundRect(width / 2 - 200, height / 2 - 150, 400, 280, 18).fill({ color: 0x0b2a46, alpha: 0.95 });
-    this.panel.stroke({ color: 0x3ea2ff, width: 3 });
+    this.panel.beginFill(0x0b2a46, 0.95);
+    this.panel.drawRoundedRect(width / 2 - 200, height / 2 - 150, 400, 280, 18);
+    this.panel.endFill();
+    this.panel.lineStyle(3, 0x3ea2ff);
+    this.panel.drawRoundedRect(width / 2 - 200, height / 2 - 150, 400, 280, 18);
+    this.panel.lineStyle(0);
     this.title.position.set(width / 2 - 160, height / 2 - 130);
     this.options.forEach((option, index) => {
       option.position.set(width / 2 - 160, height / 2 - 90 + index * 36);

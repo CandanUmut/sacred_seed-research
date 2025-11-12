@@ -7,12 +7,16 @@ export class BootScene implements Scene {
   private elapsed = 0;
 
   constructor(private manager: SceneManager) {
-    const bg = new Graphics().rect(0, 0, 10, 10).fill({ color: 0x02111d });
+    const bg = new Graphics();
+    bg.beginFill(0x02111d);
+    bg.drawRect(0, 0, 1, 1);
+    bg.endFill();
     bg.scale.set(500);
     this.container.addChild(bg);
-    this.text = new Text({
-      text: 'Sperm Odyssey\nPreparing journey...',
-      style: { fill: 0xffffff, fontSize: 32, align: 'center' },
+    this.text = new Text('Sperm Odyssey\nPreparing journey...', {
+      fill: 0xffffff,
+      fontSize: 32,
+      align: 'center',
     });
     this.text.anchor.set(0.5);
     this.container.addChild(this.text);

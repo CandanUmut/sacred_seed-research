@@ -27,11 +27,11 @@ export class MultiplayerRaceScene implements Scene {
   private background = new Graphics();
   private context: ReturnType<typeof initWorld>;
   private renderer = new RenderSystem(this);
-  private hud = new Hud(this.manager);
+  private hud: Hud;
   private tooltips = new Tooltips();
   private socket?: GameSocket;
   private buffer: SnapshotBuffer = {};
-  private status = new Text({ text: 'Connecting...', style: { fill: 0xffffff, fontSize: 20 } });
+  private status = new Text('Connecting...', { fill: 0xffffff, fontSize: 20 });
   private inputTimer = 0;
   private localTick = 0;
   private touch?: TouchControls;
@@ -42,6 +42,7 @@ export class MultiplayerRaceScene implements Scene {
 
   constructor(private manager: SceneManager) {
     this.context = initWorld(manager.app);
+    this.hud = new Hud(this.manager);
     this.container.addChild(
       this.background,
       this.ghostContainer,

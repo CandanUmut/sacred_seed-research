@@ -1,4 +1,5 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Player } from '../components/Player.js';
 import { Transform } from '../components/Transform.js';
 import { State } from '../components/State.js';
@@ -11,7 +12,7 @@ export interface SnapshotBuffer {
 
 export function createNetClientSystem(buffer: SnapshotBuffer) {
   const query = defineQuery([Player, Transform, State, Velocity]);
-  return (world: typeof Player.world) => {
+  return (world: IWorld) => {
     if (!buffer.latest) return world;
     const snapshot = buffer.latest;
     for (const eid of query(world)) {

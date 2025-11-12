@@ -1,4 +1,5 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Transform } from '../components/Transform.js';
 import { Velocity } from '../components/Velocity.js';
 import { Player } from '../components/Player.js';
@@ -11,7 +12,7 @@ window.addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase())
 
 export function createInputSystem() {
   const query = defineQuery([Transform, Velocity, Player, State]);
-  return (world: typeof Transform.world, delta: number) => {
+  return (world: IWorld, delta: number) => {
     const dt = delta / 60;
     for (const eid of query(world)) {
       let moveX = 0;

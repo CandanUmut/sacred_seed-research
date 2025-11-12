@@ -15,6 +15,9 @@ export class Recorder {
   }
 
   toBuffer(): Uint8Array {
-    return pack(this.toBlob());
+    const data = pack(this.toBlob());
+    return data instanceof Uint8Array
+      ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+      : new Uint8Array(data);
   }
 }
