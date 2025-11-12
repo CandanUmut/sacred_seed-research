@@ -67,7 +67,8 @@ export type Snapshot = z.infer<typeof Snapshot>;
 const snapshotPackr = new Packr({ structuredClone: true });
 
 export function encodeSnapshot(snapshot: Snapshot): Uint8Array {
-  return snapshotPackr.encode(snapshot);
+  const packed = snapshotPackr.encode(snapshot);
+  return packed instanceof Uint8Array ? new Uint8Array(packed) : Uint8Array.from(packed as ArrayLike<number>);
 }
 
 export function decodeSnapshot(buffer: Uint8Array): Snapshot {

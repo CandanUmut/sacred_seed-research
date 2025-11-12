@@ -1,26 +1,17 @@
 import { Graphics } from 'pixi.js';
 import type { ReplaySamples } from '@sperm-odyssey/shared';
 
-type GraphicsLike = {
-  alpha: number;
-  lineStyle(style: { color: number; width: number; alpha: number }): GraphicsLike;
-  moveTo(x: number, y: number): GraphicsLike;
-  lineTo(x: number, y: number): GraphicsLike;
-  endFill(): GraphicsLike;
-  destroy(): void;
-};
-
 type ContainerLike = {
-  addChild: (...children: GraphicsLike[]) => unknown;
-  removeChild?: (child: GraphicsLike) => unknown;
+  addChild: (...children: Graphics[]) => unknown;
+  removeChild?: (child: Graphics) => unknown;
 };
 
 interface GhostTrack {
   id: number;
-  graphics: GraphicsLike;
+  graphics: Graphics;
 }
 
-export type GraphicsFactory = () => GraphicsLike;
+export type GraphicsFactory = () => Graphics;
 
 const defaultFactory: GraphicsFactory = () => new Graphics();
 
