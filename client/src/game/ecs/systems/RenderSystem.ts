@@ -1,4 +1,5 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Graphics } from 'pixi.js';
 import { Transform } from '../components/Transform.js';
 import { Player } from '../components/Player.js';
@@ -10,11 +11,15 @@ export class RenderSystem {
 
   constructor(private scene: Scene) {}
 
-  run(world: typeof Transform.world): typeof world {
+  run(world: IWorld): IWorld {
     for (const eid of this.query(world)) {
       let sprite = this.sprites.get(eid);
       if (!sprite) {
-        sprite = new Graphics().circle(0, 0, 12).fill({ color: 0x6cd6ff }).stroke({ width: 2, color: 0xffffff });
+        sprite = new Graphics();
+        sprite.lineStyle(2, 0xffffff);
+        sprite.beginFill(0x6cd6ff);
+        sprite.drawCircle(0, 0, 12);
+        sprite.endFill();
         this.scene.container.addChild(sprite);
         this.sprites.set(eid, sprite);
       }

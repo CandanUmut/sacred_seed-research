@@ -1,4 +1,5 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Player } from '../components/Player.js';
 import { State } from '../components/State.js';
 import { Region } from '../components/Region.js';
@@ -8,7 +9,7 @@ import { getGateScience } from '../../../science/biology.js';
 
 export function createBiologyGateSystem() {
   const query = defineQuery([Player, State, Region, Velocity]);
-  return (world: typeof Player.world, delta: number) => {
+  return (world: IWorld, delta: number) => {
     const dt = delta / 60;
     for (const eid of query(world)) {
       const progress = State.progress[eid];

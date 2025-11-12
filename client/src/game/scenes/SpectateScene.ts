@@ -13,7 +13,7 @@ export class SpectateScene implements Scene {
   private renderer = new RenderSystem(this);
   private socket?: GameSocket;
   private buffer: SnapshotBuffer = {};
-  private status = new Text({ text: 'Searching rooms...', style: { fill: 0xffffff, fontSize: 20 } });
+  private status = new Text('Searching rooms...', { fill: 0xffffff, fontSize: 20 });
   private readonly snapshotListener = (snapshot: Snapshot) => {
     this.buffer.latest = snapshot as never;
   };
@@ -34,7 +34,9 @@ export class SpectateScene implements Scene {
 
   onResize(width: number, height: number): void {
     this.background.clear();
-    this.background.rect(0, 0, width, height).fill({ color: 0x020a12 });
+    this.background.beginFill(0x020a12);
+    this.background.drawRect(0, 0, width, height);
+    this.background.endFill();
     this.status.position.set(20, height - 40);
   }
 

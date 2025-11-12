@@ -29,16 +29,20 @@ export class SinglePlayerScene implements Scene {
   ];
   private collision: ReturnType<typeof createCollisionSystem>;
   private renderer = new RenderSystem(this);
-  private hud = new Hud(this.manager);
+  private hud: Hud;
   private tooltips = new Tooltips();
-  private intro = new Text({
-    text: 'Use WASD or arrow keys to navigate. Press Space for hyperactivation bursts!',
-    style: { fill: 0xffffff, fontSize: 20, wordWrap: true, wordWrapWidth: 640 },
-  });
+  private intro: Text;
 
   constructor(private manager: SceneManager) {
     this.context = initWorld(manager.app);
     this.collision = createCollisionSystem({ width: 1280, height: 720 });
+    this.hud = new Hud(this.manager);
+    this.intro = new Text('Use WASD or arrow keys to navigate. Press Space for hyperactivation bursts!', {
+      fill: 0xffffff,
+      fontSize: 20,
+      wordWrap: true,
+      wordWrapWidth: 640,
+    });
     this.container.addChild(this.background, this.hud.container, this.tooltips.container, this.intro);
     Region.id[this.context.entities.player] = REGION_IDS.indexOf('vagina');
   }

@@ -4,12 +4,15 @@ import { SeasonBoard } from '../ui/SeasonBoard.js';
 
 export class LobbyScene implements Scene {
   container = new Container();
-  private countdownText = new Text({ text: 'Preparing lobby...', style: { fill: 0xffffff, fontSize: 24 } });
+  private countdownText = new Text('Preparing lobby...', { fill: 0xffffff, fontSize: 24 });
   private timeRemaining = 5;
   private seasonBoard = new SeasonBoard();
 
   constructor(private manager: SceneManager) {
-    const bg = new Graphics().rect(0, 0, 20, 12).fill({ color: 0x042f4e });
+    const bg = new Graphics();
+    bg.beginFill(0x042f4e);
+    bg.drawRect(0, 0, 1, 1);
+    bg.endFill();
     bg.scale.set(80);
     this.container.addChild(bg, this.countdownText, this.seasonBoard.container);
   }

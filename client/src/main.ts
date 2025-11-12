@@ -10,26 +10,28 @@ import { SpectateScene } from './game/scenes/SpectateScene.js';
 import { SceneManager } from './game/scenes/SceneManager.js';
 import './styles/ui.css';
 
-const root = document.getElementById('root');
-if (!root) {
-  throw new Error('Missing root container');
-}
-
-const app = new Application();
-let sceneManager: SceneManager;
+const app = new Application({
+  background: '#02111d',
+  resizeTo: window,
+  antialias: true,
+});
 
 async function bootstrap(): Promise<void> {
-  await app.init({
-    background: '#02111d',
-    resizeTo: window,
-    antialias: true,
-  });
-  root.appendChild(app.canvas);
+  const rootElement = document.getElementById('root');
+  if (!(rootElement instanceof HTMLElement)) {
+    throw new Error('Missing root container');
+  }
+
+  const view = app.view as unknown;
+  if (!(view instanceof HTMLCanvasElement)) {
+    throw new Error('Pixi application did not provide an HTMLCanvasElement view');
+  }
+  rootElement.appendChild(view);
 
   const storedSettings = localStorage.getItem('sperm-odyssey-settings');
   const settings = storedSettings ? { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) } : DEFAULT_SETTINGS;
 
-  sceneManager = new SceneManager(app, settings);
+  const sceneManager = new SceneManager(app, settings);
   sceneManager.register('boot', () => new BootScene(sceneManager));
   sceneManager.register('menu', () => new MenuScene(sceneManager));
   sceneManager.register('lobby', () => new LobbyScene(sceneManager));

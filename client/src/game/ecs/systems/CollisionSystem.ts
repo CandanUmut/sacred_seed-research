@@ -1,11 +1,12 @@
 import { defineQuery } from 'bitecs';
+import type { IWorld } from 'bitecs';
 import { Transform } from '../components/Transform.js';
 import { Velocity } from '../components/Velocity.js';
 import { Effects } from '../components/Effects.js';
 
 export function createCollisionSystem(bounds: { width: number; height: number }) {
   const query = defineQuery([Transform, Velocity, Effects]);
-  return (world: typeof Transform.world, delta: number) => {
+  return (world: IWorld, delta: number) => {
     const dt = delta / 60;
     for (const eid of query(world)) {
       const x = Transform.x[eid];
